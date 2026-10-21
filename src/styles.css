@@ -1,0 +1,195 @@
+/* Page basics */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f5f5;
+  color: #282828;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+header {
+  border-bottom: 2px solid #812d38;
+  padding-bottom: 24px;
+}
+
+h1 {
+  margin: 8px 0;
+  font-size: 32px;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+h3 {
+  margin: 12px 0 8px;
+  font-size: 18px;
+}
+
+section {
+  margin: 24px 0;
+}
+
+.muted,
+footer {
+  color: #666;
+  font-size: 14px;
+}
+
+.message:empty {
+  display: none;
+}
+
+.message {
+  color: #28572c;
+}
+
+/* Shared form controls */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  padding: 10px 16px;
+  border: 1px solid #812d38;
+  border-radius: 4px;
+  background: #812d38;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #64222b;
+}
+
+button.secondary {
+  background: white;
+  color: #812d38;
+}
+
+button.secondary:hover {
+  background: #f5eeee;
+}
+
+:focus-visible {
+  outline: 3px solid #2865ab;
+  outline-offset: 3px;
+}
+
+label {
+  display: block;
+  margin-bottom: 14px;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 9px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background: white;
+  color: #282828;
+}
+
+textarea {
+  resize: vertical;
+}
+
+form {
+  max-width: 540px;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Search and item cards */
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+}
+
+.item-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.item-card {
+  overflow-wrap: anywhere;
+}
+
+.item-card p {
+  margin: 8px 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: #f1e7e9;
+  color: #702631;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+summary,
+a {
+  color: #812d38;
+}
+
+summary {
+  cursor: pointer;
+}
+
+.description {
+  white-space: pre-wrap;
+}
+
+footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+/* Stack the layout on phones. */
+@media (max-width: 600px) {
+  .container {
+    padding: 16px;
+  }
+
+  .filters,
+  .item-list {
+    grid-template-columns: 1fr;
+  }
+}
