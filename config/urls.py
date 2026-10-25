@@ -20,3 +20,14 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
+
+# Account API routes
+from django.urls import include
+
+urlpatterns += [
+    path("api/auth/", include("accounts.urls")),
+]
+
+urlpatterns += [
+    path("api/users/", include("accounts.user_urls")),
+]
