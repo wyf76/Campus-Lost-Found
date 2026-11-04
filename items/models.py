@@ -19,7 +19,21 @@ class Report(models.Model):
     class Location(models.TextChoices):
         LEARNING_COMMONS = "learning_commons", "Learning Commons"
         BENSON_CENTER = "benson_center", "Benson Center"
-        SCDI = "scdi", "SCDI"
+        SCDI = "scdi", "Sobrato Campus for Discovery and Innovation (SCDI)"
+        BERGIN_HALL = "bergin_hall", "Bergin Hall"
+        HEAFEY_HALL = "heafey_hall", "Heafey Hall"
+        ALUMNI_SCIENCE_HALL = "alumni_science_hall", "Alumni Science Hall"
+        DALY_SCIENCE_CENTER = "daly_science_center", "Daly Science Center"
+        OCONNOR_HALL = "oconnor_hall", "O'Connor Hall"
+        KENNA_HALL = "kenna_hall", "Kenna Hall"
+        VARI_HALL = "vari_hall", "Vari Hall"
+        LUCAS_HALL = "lucas_hall", "Lucas Hall"
+        LOYOLA_HALL = "loyola_hall", "Loyola Hall"
+        ALAMEDA_HALL = "alameda_hall", "Alameda Hall"
+        DOWD_ART_BUILDING = (
+            "dowd_art_building",
+            "Edward M. Dowd Art and Art History Building",
+        )
         MALLEY_CENTER = "malley_center", "Malley Center"
         ORRADRE_LIBRARY = "orradre_library", "Orradre Library"
         OTHER = "other", "Other"
