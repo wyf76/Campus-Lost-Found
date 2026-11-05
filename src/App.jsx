@@ -17,7 +17,7 @@ function loadReports() {
       if (!item || !item.isOwn || typeof item.id !== 'string') return false;
       const hasText = ['title', 'location', 'description', 'contact'].every(
         field => typeof item[field] === 'string'
-      );
+      );  
       const validDate = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
         && !Number.isNaN(new Date(item.date).getTime());
 
