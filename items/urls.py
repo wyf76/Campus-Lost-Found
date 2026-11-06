@@ -23,3 +23,11 @@ from .edit_views import edit_report
 urlpatterns += [
     path("<int:report_id>/edit/", edit_report, name="report-edit"),
 ]
+
+
+from .saved_views import saved_report_change, saved_report_list
+
+urlpatterns += [
+    path("saved/", saved_report_list, name="saved-report-list"),
+    path("<int:report_id>/save/", saved_report_change, name="saved-report-change"),
+]

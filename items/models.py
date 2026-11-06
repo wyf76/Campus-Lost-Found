@@ -63,3 +63,16 @@ class Report(models.Model):
 
     def __str__(self):
         return f"{self.get_item_type_display()}: {self.title}"
+
+
+class SavedReport(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "report"), name="items_unique_saved_report",
+            ),
+        ]
