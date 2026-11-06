@@ -82,6 +82,7 @@ class ReportFlag(models.Model):
     report = models.ForeignKey(Report, on_delete=models.CASCADE)
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     reason = models.CharField(max_length=500)
+    escalated_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

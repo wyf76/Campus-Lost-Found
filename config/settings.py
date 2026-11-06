@@ -137,6 +137,7 @@ EMAIL_HOST_USER = os.environ.get(
 )
 EMAIL_HOST_PASSWORD = os.environ.get("CAMPUS_EMAIL_PASSWORD", "")
 EMAIL_TIMEOUT = 15
+CAMPUS_MODERATION_EMAIL = os.environ.get("CAMPUS_MODERATION_EMAIL", "").strip()
 DEFAULT_FROM_EMAIL = f"Campus Lost and Found <{EMAIL_HOST_USER}>"
 
 if email_mode == "smtp" and (

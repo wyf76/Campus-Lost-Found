@@ -78,6 +78,9 @@ def report_flag_list(request):
                 "report_title": flag.report.title,
                 "reporter_id": flag.reporter_id,
                 "reason": flag.reason,
+                "escalated_at": (
+                    flag.escalated_at.isoformat() if flag.escalated_at else None
+                ),
                 "created_at": flag.created_at.isoformat(),
             }
             for flag in flags

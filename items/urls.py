@@ -39,3 +39,10 @@ urlpatterns += [
     path("flags/", report_flag_list, name="report-flag-list"),
     path("<int:report_id>/flag/", flag_report, name="report-flag"),
 ]
+
+
+from .escalation_views import escalate_flag
+
+urlpatterns += [
+    path("flags/<int:flag_id>/escalate/", escalate_flag, name="flag-escalate"),
+]
