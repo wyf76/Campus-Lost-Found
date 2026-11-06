@@ -1,11 +1,17 @@
 from django.urls import path
 
-from . import views
+from . import notification_views, views
 
 
 app_name = "chat"
 
 urlpatterns = [
+    path("notifications/", notification_views.notification_list, name="notification-list"),
+    path(
+        "notifications/<int:notification_id>/read/",
+        notification_views.notification_read,
+        name="notification-read",
+    ),
     path(
         "reports/<int:report_id>/conversations/",
         views.conversation_start,

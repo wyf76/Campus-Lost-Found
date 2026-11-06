@@ -16,7 +16,7 @@ from accounts.permissions import api_login_required
 from items.models import Report
 
 from .forms import MessageForm
-from .models import Conversation, Message
+from .models import Conversation, Message, MessageNotification
 
 
 def _json_object(request, allowed_fields):
@@ -231,6 +231,14 @@ def _message_create(request, conversation):
             conversation=conversation,
             sender=request.user,
             body=body,
+        )
+        recipient_id = (
+            conversation.seeker_id
+            if request.user.pk == report.author_id
+            else report.author_id
+        )
+        MessageNotification.objects.create(
+            message=message, recipient_id=recipient_id,
         )
         updated_at = timezone.now()
         Conversation.objects.filter(pk=conversation.pk).update(

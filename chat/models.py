@@ -50,3 +50,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message {self.pk} in conversation {self.conversation_id}"
+
+
+class MessageNotification(models.Model):
+    message = models.OneToOneField(Message, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="message_notifications",
+    )
+    read_at = models.DateTimeField(blank=True, null=True)
