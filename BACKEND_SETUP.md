@@ -2,20 +2,11 @@
 
 ## Current scope
 
-Implemented:
-- Custom users with automatic integer IDs and unique SCU email addresses.
-- Registration and email verification.
-- Login, logout, and database sessions.
-- Read-only public profiles for authenticated students.
-- Password reset through email.
-- PostgreSQL storage.
+The Django backend provides verified SCU accounts, password reset, read-only
+profiles, lost and found reports, report search and history, private chat,
+notifications, saved reports, and moderator tools. PostgreSQL stores the data.
 
-The account test suite currently contains 54 tests.
-
-Pending:
-- Report ownership integration and own-report history.
-- Moderator actions for blocking users and resolving reports.
-- Frontend integration and deployment configuration.
+The React frontend integration and deployment are separate work.
 
 ## Requirements
 
@@ -120,7 +111,7 @@ Never commit .env.backend or share another developer's secret key.
 ```bash
 python manage.py check
 python manage.py migrate
-python manage.py test accounts
+python manage.py test
 python manage.py runserver
 ```
 
@@ -216,37 +207,60 @@ authenticated user's navigation.
 
 Profile endpoints reject edits. Password changes use the reset flow.
 
-is_moderator identifies the platform moderator role. Moderator
-endpoints have not been implemented yet. Do not grant platform
-moderators Django superuser privileges.
+The `is_moderator` field identifies the platform moderator role.
+Moderator endpoints enforce this role on the server.
 
-## Report integration contract
+## Report, chat, and moderation API
 
-Reports must reference settings.AUTH_USER_MODEL, which resolves to
-accounts.User. Do not import django.contrib.auth.models.User as the
-application's user model.
+These endpoints require an active, verified session. Send the session cookie
+and the current `X-CSRFToken` header with POST, PATCH, and DELETE requests.
+Send `Content-Type: application/json` for JSON bodies. Report creation also
+accepts multipart form data for an optional image.
 
-Recommended ownership field inside the report model:
+| Method | Path | Purpose |
+|---|---|---|
+| GET, POST | /api/reports/ | Search or create reports |
+| GET | /api/reports/{id}/ | View a report |
+| PATCH | /api/reports/{id}/edit/ | Edit your own open report |
+| POST | /api/reports/{id}/resolve/ | Resolve a report as its author or a moderator |
+| GET | /api/users/me/reports/ | View your report history |
+| GET | /api/reports/saved/ | View your private saved reports |
+| POST, DELETE | /api/reports/{id}/save/ | Save or unsave a report |
+| POST | /api/reports/{id}/conversations/ | Open a conversation with the report author |
+| GET | /api/conversations/ | List your conversations |
+| GET, POST | /api/conversations/{id}/messages/ | Read or send messages |
+| GET | /api/notifications/ | List up to 50 unread message notifications |
+| POST | /api/notifications/{id}/read/ | Mark a notification as read |
+| POST | /api/reports/{id}/flag/ | Flag a report with a JSON reason |
+| GET | /api/reports/flags/ | List flags as a moderator |
+| POST | /api/reports/flags/{flag_id}/escalate/ | Escalate a flag as a moderator |
+| POST, DELETE | /api/reports/{id}/pin/ | Pin or unpin a report as a moderator |
+| GET | /api/moderation/reports/ | View platform-wide report history as a moderator |
+| GET | /api/moderation/statistics/ | View aggregate counts as a moderator |
+| POST | /api/users/{user_id}/block/ | Block an eligible student as a moderator |
 
-```python
-author = models.ForeignKey(
-    settings.AUTH_USER_MODEL,
-    on_delete=models.PROTECT,
-    related_name="reports",
-)
-```
+- Report creation takes `item_type`, `title`, `category`, `happened_on`,
+  `location`, and `description`. The server sets the author from the session.
+  `location_details`, `happened_time`, and the multipart `image` are optional.
+- Report search supports `q`, `type`, `category`, `location`, `date_from`,
+  `date_to`, `status`, and `sort`. The student feed defaults to open reports
+  with pinned reports first. An explicit `sort=newest` or `sort=oldest` uses
+  chronological order. Moderator history defaults to all report statuses.
+- Send `happened_time` as a 24-hour string such as `14:30`. The API returns
+  a time such as `14:30:00` or `null`. On edit, omit it to keep the stored
+  value or send an empty string to clear it.
+- Send chat messages as JSON with a `body` string. Existing conversations
+  remain readable after resolution. New messages require an open report.
+- Escalation requires SMTP and a confirmed university staff inbox set in
+  `CAMPUS_MODERATION_EMAIL`. Leave this blank for local setup and testing.
 
-Report creation must assign author=request.user on the backend and
-require an active, verified login. Do not trust a browser-supplied
-author ID.
+## Frontend integration
 
-Coordinate the report model name, timestamp field, public fields,
-resolution state, and migrations before implementing report history.
+Use a same-origin setup or development proxy for browser API calls. Preserve
+cookies across requests and refresh the CSRF token from the login response.
+The default report feed requires login. Use Django as the source of truth for
+reports and account state when connecting the React frontend.
 
-## Integration notes
-
-The React frontend has not been changed. Browser integration still
-needs an agreed same-origin/proxy or CORS configuration.
-
-SQLite database files, Python environments, credentials, and generated
-Python caches are not part of the backend handoff.
+Share `.env.backend.example` with the team. Each developer should configure
+their own `.env.backend`, local database credentials, and Django secret key.
+Console email mode is sufficient for local verification and password resets.
