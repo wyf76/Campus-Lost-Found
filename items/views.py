@@ -13,7 +13,7 @@ from django.views.decorators.http import (
 
 from accounts.permissions import api_login_required
 
-from .forms import ReportForm
+from .forms import ReportForm, ReportSearchForm
 from .models import Report
 
 # define what fields are allowed in a report form submission, and which are allowed in JSON submissions
@@ -28,8 +28,6 @@ REPORT_FORM_FIELDS = {
     "image",
 }
 JSON_REPORT_FIELDS = REPORT_FORM_FIELDS - {"image"}
-#define what filters are allowed in a report list request
-LIST_FILTERS = {"q", "type", "category", "location"}
 
 # check get or post method and dispatch to the appropriate function
 @never_cache
@@ -155,36 +153,19 @@ def report_create(request):
 @never_cache
 @require_GET
 def report_list(request):
-    """Return reports, optionally filtered by keyword, type, category, or location."""
-    unexpected = set(request.GET) - LIST_FILTERS
-    if unexpected:
+    """Return matching reports, showing open reports by default."""
+    form = ReportSearchForm({key: value.strip() for key, value in request.GET.items()})
+    if set(request.GET) - set(form.fields):
         return JsonResponse(
             {"errors": {"request": ["Unsupported search parameter."]}},
             status=400,
         )
+    if not form.is_valid():
+        return JsonResponse({"errors": _form_errors(form)}, status=400)
 
-    reports = Report.objects.select_related("author").all()
-    query = request.GET.get("q", "").strip()
-    item_type = request.GET.get("type", "").strip()
-    category = request.GET.get("category", "").strip()
-    location = request.GET.get("location", "").strip()
-
-    if item_type and item_type not in Report.ItemType.values:
-        return JsonResponse(
-            {"errors": {"type": ["Choose lost or found."]}},
-            status=400,
-        )
-    if category and category not in Report.Category.values:
-        return JsonResponse(
-            {"errors": {"category": ["Choose a valid category."]}},
-            status=400,
-        )
-    if location and location not in Report.Location.values:
-        return JsonResponse(
-            {"errors": {"location": ["Choose a valid location."]}},
-            status=400,
-        )
-
+    data = form.cleaned_data
+    reports = Report.objects.select_related("author")
+    query = data["q"]
     if query:
         reports = reports.filter(
             Q(title__icontains=query)
@@ -192,16 +173,24 @@ def report_list(request):
             | Q(location__icontains=query)
             | Q(location_details__icontains=query)
         )
-    if item_type:
-        reports = reports.filter(item_type=item_type)
-    if category:
-        reports = reports.filter(category=category)
-    if location:
-        reports = reports.filter(location=location)
+    if data["type"]:
+        reports = reports.filter(item_type=data["type"])
+    if data["category"]:
+        reports = reports.filter(category=data["category"])
+    if data["location"]:
+        reports = reports.filter(location=data["location"])
+    if data["date_from"]:
+        reports = reports.filter(happened_on__gte=data["date_from"])
+    if data["date_to"]:
+        reports = reports.filter(happened_on__lte=data["date_to"])
 
-    reports = reports.order_by("-created_at", "-pk")
+    status = data["status"] or "open"
+    if status != "all":
+        reports = reports.filter(is_resolved=(status == "resolved"))
+
+    ordering = ("created_at", "pk") if data["sort"] == "oldest" else ("-created_at", "-pk")
     return JsonResponse(
-        {"reports": [_serialize_report(report, request) for report in reports]}
+        {"reports": [_serialize_report(report, request) for report in reports.order_by(*ordering)]}
     )
 
 

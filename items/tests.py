@@ -344,3 +344,56 @@ class ReportReadApiTests(TestCase):
 
         self.assertEqual(invalid_choice.status_code, 400)
         self.assertEqual(unsupported.status_code, 400)
+
+
+class ReportSearchFilterTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        author = create_user()
+        cls.first = create_report(author, happened_on="2026-10-25")
+        cls.resolved = create_report(
+            author, happened_on="2026-10-26", is_resolved=True,
+        )
+        cls.last = create_report(author, happened_on="2026-10-27")
+        cls.url = reverse("items:report-list-create")
+
+    def result_ids(self, **filters):
+        response = self.client.get(self.url, filters)
+        self.assertEqual(response.status_code, 200)
+        return [report["id"] for report in response.json()["reports"]]
+
+    def test_open_default_and_explicit_status(self):
+        self.assertEqual(self.result_ids(), [self.last.pk, self.first.pk])
+        self.assertEqual(self.result_ids(status="open"), self.result_ids())
+        self.assertEqual(self.result_ids(status="resolved"), [self.resolved.pk])
+        self.assertEqual(
+            self.result_ids(status="all", sort="oldest"),
+            [self.first.pk, self.resolved.pk, self.last.pk],
+        )
+
+    def test_date_bounds_are_inclusive_and_combine_with_status(self):
+        self.assertEqual(
+            self.result_ids(date_from="2026-10-25", date_to="2026-10-26"),
+            [self.first.pk],
+        )
+        self.assertEqual(
+            self.result_ids(
+                date_from="2026-10-25", date_to="2026-10-26",
+                status="all", sort="oldest", category="bags",
+            ),
+            [self.first.pk, self.resolved.pk],
+        )
+        self.assertEqual(self.result_ids(date_from="2026-10-27"), [self.last.pk])
+
+    def test_invalid_dates_status_and_sort_return_field_errors(self):
+        cases = (
+            ({"date_from": "2026-02-30"}, "date_from"),
+            ({"date_from": "2026-10-27", "date_to": "2026-10-25"}, "date_to"),
+            ({"status": "missing"}, "status"),
+            ({"sort": "random"}, "sort"),
+        )
+        for filters, field in cases:
+            with self.subTest(filters=filters):
+                response = self.client.get(self.url, filters)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.json()["errors"])
