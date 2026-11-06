@@ -46,3 +46,10 @@ from .escalation_views import escalate_flag
 urlpatterns += [
     path("flags/<int:flag_id>/escalate/", escalate_flag, name="flag-escalate"),
 ]
+
+
+from .pin_views import change_report_pin
+
+urlpatterns += [
+    path("<int:report_id>/pin/", change_report_pin, name="report-pin"),
+]

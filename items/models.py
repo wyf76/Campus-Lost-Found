@@ -54,6 +54,7 @@ class Report(models.Model):
     )
 
     is_resolved = models.BooleanField(default=False)
+    is_pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(
         upload_to="report_images/",

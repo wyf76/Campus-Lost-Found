@@ -66,6 +66,7 @@ def _serialize_report(report, request):
             "full_name": report.author.full_name,
         },
         "is_resolved": report.is_resolved,
+        "is_pinned": report.is_pinned,
         "created_at": report.created_at.isoformat(),
         "image_url": image_url,
     }
@@ -159,7 +160,7 @@ def report_create(request):
 @api_login_required
 def report_list(request):
     """Return matching reports, showing open reports by default."""
-    return _report_listing(request, default_status="open")
+    return _report_listing(request, default_status="open", pinned_first=True)
 
 
 @never_cache
@@ -174,7 +175,7 @@ def moderation_report_history(request):
     return _report_listing(request, default_status="all")
 
 
-def _report_listing(request, *, default_status):
+def _report_listing(request, *, default_status, pinned_first=False):
     form = ReportSearchForm({key: value.strip() for key, value in request.GET.items()})
     if set(request.GET) - set(form.fields):
         return JsonResponse(
@@ -210,6 +211,8 @@ def _report_listing(request, *, default_status):
         reports = reports.filter(is_resolved=(status == "resolved"))
 
     ordering = ("created_at", "pk") if data["sort"] == "oldest" else ("-created_at", "-pk")
+    if pinned_first and not data["sort"]:
+        ordering = ("-is_pinned", *ordering)
     return JsonResponse(
         {"reports": [_serialize_report(report, request) for report in reports.order_by(*ordering)]}
     )

@@ -48,6 +48,9 @@ def resolve_report(request, report_id):
             status=403,
         )
 
-    Report.objects.filter(pk=report.pk, is_resolved=False).update(is_resolved=True)
+    Report.objects.filter(pk=report.pk, is_resolved=False).update(
+        is_resolved=True, is_pinned=False,
+    )
     report.is_resolved = True
+    report.is_pinned = False
     return JsonResponse({"report": _serialize_report(report, request)})
