@@ -112,13 +112,10 @@ def _accessible_conversation(conversation_id, user):
 @require_POST
 @csrf_protect
 @api_login_required
+@transaction.atomic
 def conversation_start(request, report_id):
-    """Open or create the current user's conversation about a report."""
-    report = (
-        Report.objects.select_related("author")
-        .filter(pk=report_id)
-        .first()
-    )
+    """Open an existing conversation or start one on an open report."""
+    report = Report.objects.select_for_update().filter(pk=report_id).first()
     if report is None:
         return JsonResponse(
             {"errors": {"report": ["Report not found."]}},
@@ -131,10 +128,21 @@ def conversation_start(request, report_id):
             status=400,
         )
 
-    conversation, created = Conversation.objects.get_or_create(
-        report=report,
-        seeker=request.user,
-    )
+    if report.is_resolved:
+        conversation = Conversation.objects.filter(
+            report=report, seeker=request.user,
+        ).first()
+        if conversation is None:
+            return JsonResponse(
+                {"errors": {"report": ["Resolved reports cannot start new conversations."]}},
+                status=409,
+            )
+        created = False
+    else:
+        conversation, created = Conversation.objects.get_or_create(
+            report=report,
+            seeker=request.user,
+        )
     conversation = (
         Conversation.objects.select_related(
             "report",
@@ -212,6 +220,13 @@ def _message_create(request, conversation):
     body = form.cleaned_data["body"]
 
     with transaction.atomic():
+        report = Report.objects.select_for_update().get(pk=conversation.report_id)
+        if report.is_resolved:
+            return JsonResponse(
+                {"errors": {"report": ["Resolved reports cannot receive new messages."]}},
+                status=409,
+            )
+
         message = Message.objects.create(
             conversation=conversation,
             sender=request.user,

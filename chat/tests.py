@@ -307,3 +307,54 @@ class ChatApiTests(TestCase):
         reporter_messages = self.client.get(messages_url)
         self.assertEqual(reporter_messages.status_code, 200)
         self.assertEqual(len(reporter_messages.json()["messages"]), 1)
+
+class ResolvedReportChatTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.reporter = create_user("reporter@scu.edu", "Reporter")
+        cls.seeker = create_user("seeker@scu.edu", "Seeker")
+        cls.report = create_report(cls.reporter)
+
+    def resolve_report(self):
+        self.client.force_login(self.reporter)
+        url = reverse("items:report-resolve", args=[self.report.pk])
+        self.assertEqual(self.client.post(url).status_code, 200)
+
+    def test_resolved_report_rejects_new_conversation(self):
+        self.resolve_report()
+        self.client.force_login(self.seeker)
+        url = reverse("chat:conversation-start", args=[self.report.pk])
+        self.assertEqual(self.client.post(url).status_code, 409)
+        self.assertFalse(Conversation.objects.filter(report=self.report).exists())
+
+    def test_existing_conversation_can_be_reopened_and_read(self):
+        conversation = Conversation.objects.create(report=self.report, seeker=self.seeker)
+        message = Message.objects.create(
+            conversation=conversation, sender=self.seeker, body="I found your bag.",
+        )
+        self.resolve_report()
+        self.client.force_login(self.seeker)
+        start_url = reverse("chat:conversation-start", args=[self.report.pk])
+        reopened = self.client.post(start_url)
+        self.assertEqual(reopened.status_code, 200)
+        self.assertEqual(reopened.json()["conversation"]["id"], conversation.pk)
+
+        url = reverse("chat:message-list-create", args=[conversation.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([entry["id"] for entry in response.json()["messages"]], [message.pk])
+
+    def test_neither_participant_can_send_after_resolution(self):
+        conversation = Conversation.objects.create(report=self.report, seeker=self.seeker)
+        self.resolve_report()
+        url = reverse("chat:message-list-create", args=[conversation.pk])
+
+        for user in (self.reporter, self.seeker):
+            with self.subTest(user=user.pk):
+                self.client.force_login(user)
+                response = self.client.post(
+                    url, {"body": "A new reply"}, content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 409)
+
+        self.assertFalse(conversation.messages.exists())
