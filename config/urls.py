@@ -46,7 +46,13 @@ if settings.DEBUG:
 
 
 from items.statistics_views import platform_statistics
+from items.views import moderation_report_history
 
 urlpatterns += [
     path("api/moderation/statistics/", platform_statistics, name="platform-statistics"),
+    path(
+        "api/moderation/reports/",
+        moderation_report_history,
+        name="moderation-report-history",
+    ),
 ]

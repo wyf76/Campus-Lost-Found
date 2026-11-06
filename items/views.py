@@ -159,6 +159,22 @@ def report_create(request):
 @api_login_required
 def report_list(request):
     """Return matching reports, showing open reports by default."""
+    return _report_listing(request, default_status="open")
+
+
+@never_cache
+@require_GET
+@api_login_required
+def moderation_report_history(request):
+    if not request.user.is_moderator:
+        return JsonResponse(
+            {"errors": {"authorization": ["Moderator access is required."]}},
+            status=403,
+        )
+    return _report_listing(request, default_status="all")
+
+
+def _report_listing(request, *, default_status):
     form = ReportSearchForm({key: value.strip() for key, value in request.GET.items()})
     if set(request.GET) - set(form.fields):
         return JsonResponse(
@@ -189,7 +205,7 @@ def report_list(request):
     if data["date_to"]:
         reports = reports.filter(happened_on__lte=data["date_to"])
 
-    status = data["status"] or "open"
+    status = data["status"] or default_status
     if status != "all":
         reports = reports.filter(is_resolved=(status == "resolved"))
 
