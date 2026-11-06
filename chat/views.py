@@ -15,6 +15,7 @@ from django.views.decorators.http import (
 from accounts.permissions import api_login_required
 from items.models import Report
 
+from .email_alerts import send_message_alert
 from .forms import MessageForm
 from .models import Conversation, Message, MessageNotification
 
@@ -232,14 +233,14 @@ def _message_create(request, conversation):
             sender=request.user,
             body=body,
         )
-        recipient_id = (
-            conversation.seeker_id
+        recipient = (
+            conversation.seeker
             if request.user.pk == report.author_id
-            else report.author_id
+            else conversation.report.author
         )
-        MessageNotification.objects.create(
-            message=message, recipient_id=recipient_id,
-        )
+        MessageNotification.objects.create(message=message, recipient=recipient)
+        if recipient.is_active and recipient.email_verified:
+            transaction.on_commit(lambda: send_message_alert(recipient.email), robust=True)
         updated_at = timezone.now()
         Conversation.objects.filter(pk=conversation.pk).update(
             updated_at=updated_at
