@@ -76,3 +76,17 @@ class SavedReport(models.Model):
                 fields=("user", "report"), name="items_unique_saved_report",
             ),
         ]
+
+
+class ReportFlag(models.Model):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    reason = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("report", "reporter"), name="items_unique_report_flag",
+            ),
+        ]

@@ -31,3 +31,11 @@ urlpatterns += [
     path("saved/", saved_report_list, name="saved-report-list"),
     path("<int:report_id>/save/", saved_report_change, name="saved-report-change"),
 ]
+
+
+from .flag_views import flag_report, report_flag_list
+
+urlpatterns += [
+    path("flags/", report_flag_list, name="report-flag-list"),
+    path("<int:report_id>/flag/", flag_report, name="report-flag"),
+]
