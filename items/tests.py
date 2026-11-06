@@ -254,6 +254,7 @@ class ReportReadApiTests(TestCase):
         # Create a report author and get the report-list API URL.
         self.user = create_user()
         self.list_url = reverse("items:report-list-create")
+        self.client.force_login(self.user)
 
     def test_empty_report_list_returns_empty_array(self):
         # Request the list when the test database has no reports.
@@ -356,6 +357,10 @@ class ReportSearchFilterTests(TestCase):
         )
         cls.last = create_report(author, happened_on="2026-10-27")
         cls.url = reverse("items:report-list-create")
+        cls.author = author
+
+    def setUp(self):
+        self.client.force_login(self.author)
 
     def result_ids(self, **filters):
         response = self.client.get(self.url, filters)
@@ -397,3 +402,36 @@ class ReportSearchFilterTests(TestCase):
                 response = self.client.get(self.url, filters)
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(field, response.json()["errors"])
+
+
+class ReportBrowsingAccessTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = create_user()
+        cls.viewer = create_user(email="viewer@scu.edu")
+        cls.report = create_report(cls.author)
+        cls.urls = (
+            reverse("items:report-list-create"),
+            reverse("items:report-detail", args=[cls.report.pk]),
+        )
+
+    def test_anonymous_and_unverified_users_cannot_browse(self):
+        for url in self.urls:
+            self.assertEqual(self.client.get(url).status_code, 401)
+
+        self.viewer.email_verified = False
+        self.viewer.save(update_fields=["email_verified"])
+
+        for url in self.urls:
+            with self.subTest(url=url):
+                self.client.force_login(self.viewer)
+                self.assertEqual(self.client.get(url).status_code, 401)
+
+    def test_verified_student_can_browse_until_blocked(self):
+        self.client.force_login(self.viewer)
+        for url in self.urls:
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+        type(self.viewer).objects.filter(pk=self.viewer.pk).update(is_active=False)
+        for url in self.urls:
+            self.assertEqual(self.client.get(url).status_code, 401)

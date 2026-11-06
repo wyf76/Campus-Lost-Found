@@ -152,6 +152,7 @@ def report_create(request):
 
 @never_cache
 @require_GET
+@api_login_required
 def report_list(request):
     """Return matching reports, showing open reports by default."""
     form = ReportSearchForm({key: value.strip() for key, value in request.GET.items()})
@@ -196,6 +197,7 @@ def report_list(request):
 
 @never_cache
 @require_GET
+@api_login_required
 def report_detail(request, report_id):
     """Return one report by its database ID, or a JSON 404 response."""
     report = (
