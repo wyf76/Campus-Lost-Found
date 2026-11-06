@@ -16,7 +16,7 @@ from .views import _form_errors, _serialize_report
 class ReportEditForm(ReportForm):
     class Meta(ReportForm.Meta):
         fields = (
-            "title", "category", "happened_on",
+            "title", "category", "happened_on", "happened_time",
             "location", "location_details", "description",
         )
 

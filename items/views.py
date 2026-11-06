@@ -22,6 +22,7 @@ REPORT_FORM_FIELDS = {
     "title",
     "category",
     "happened_on",
+    "happened_time",
     "location",
     "location_details",
     "description",
@@ -53,6 +54,9 @@ def _serialize_report(report, request):
         "category": report.category,
         "category_display": report.get_category_display(),
         "happened_on": report.happened_on.isoformat(),
+        "happened_time": (
+            report.happened_time.isoformat() if report.happened_time else None
+        ),
         "location": report.location,
         "location_display": report.get_location_display(),
         "location_details": report.location_details,

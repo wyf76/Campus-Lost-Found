@@ -41,6 +41,18 @@ class ReportEditTests(TestCase):
         self.assertEqual(self.report.item_type, "lost")
         self.assertEqual(self.report.description, "Blue key ring")
 
+    def test_owner_can_set_preserve_and_clear_time(self):
+        self.client.force_login(self.owner)
+        for changes, expected in (
+            ({"happened_time": "09:15"}, "09:15:00"),
+            ({"title": "Car keys"}, "09:15:00"),
+            ({"happened_time": ""}, None),
+        ):
+            with self.subTest(changes=changes):
+                response = self.patch(changes)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["report"]["happened_time"], expected)
+
     def test_only_owner_can_edit(self):
         self.assertEqual(self.patch({"title": "Changed"}).status_code, 401)
         self.client.force_login(self.other)

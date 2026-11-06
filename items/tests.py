@@ -200,6 +200,25 @@ class ReportApiTests(TestCase):
         self.assertEqual(report.author, self.user)  # The logged-in user is the author.
         self.assertEqual(response.json()["report"]["author"]["id"], self.user.pk)
 
+    def test_optional_time_is_validated_and_returned(self):
+        self.client.force_login(self.user)
+        for submit in (self.post_json, lambda payload: self.client.post(self.url, payload)):
+            with self.subTest(submit=submit):
+                response = submit({**self.payload, "happened_time": "14:30"})
+                self.assertEqual(response.status_code, 201)
+                report = response.json()["report"]
+                self.assertEqual(report["happened_time"], "14:30:00")
+                saved = Report.objects.get(pk=report["id"])
+                self.assertEqual(saved.happened_time.isoformat(), "14:30:00")
+
+        date_only = self.post_json(self.payload)
+        self.assertEqual(date_only.status_code, 201)
+        self.assertIsNone(date_only.json()["report"]["happened_time"])
+
+        invalid = self.post_json({**self.payload, "happened_time": "25:00"})
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn("happened_time", invalid.json()["errors"])
+
     def test_rejects_array_and_none_json_values(self):
         self.client.force_login(self.user)
 

@@ -42,6 +42,7 @@ class Report(models.Model):
     title = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=Category.choices)
     happened_on = models.DateField()
+    happened_time = models.TimeField(blank=True, null=True)
     location = models.CharField(max_length=40, choices=Location.choices)
     location_details = models.CharField(max_length=200, blank=True)
     description = models.TextField()

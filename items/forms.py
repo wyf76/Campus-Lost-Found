@@ -13,6 +13,7 @@ class ReportForm(forms.ModelForm):
             "title",
             "category",
             "happened_on",
+            "happened_time",
             "location",
             "location_details",
             "description",
@@ -25,6 +26,7 @@ class ReportForm(forms.ModelForm):
                 format="%Y-%m-%d",
                 attrs={"type": "date"},
             ),
+            "happened_time": forms.TimeInput(attrs={"type": "time"}),
         }
 
 class ReportSearchForm(forms.Form):
