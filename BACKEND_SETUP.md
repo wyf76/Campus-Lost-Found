@@ -6,7 +6,7 @@ The Django backend provides verified SCU accounts, password reset, read-only
 profiles, lost and found reports, report search and history, private chat,
 notifications, saved reports, and moderator tools. PostgreSQL stores the data.
 
-The React frontend integration and deployment are separate work.
+The React frontend connects to account verification, sign-in, and the core report flow. See [README.md](README.md) to run the demo or shared campus board.
 
 ## Requirements
 
