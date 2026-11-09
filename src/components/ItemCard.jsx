@@ -21,15 +21,18 @@ export default function ItemCard({ item, onReturn }) {
       </div>
       <h3>{item.title}</h3>
       <p className="item-location">{item.location}</p>
-      <p className="muted item-meta">{item.category} · {formatDate(item.date)}</p>
+      <p className="muted item-meta">{item.category} · {formatDate(item.date)}{item.pinned ? ' · Pinned' : ''}</p>
 
       <details>
         <summary>View details</summary>
+        {item.image && <img className="report-image" src={item.image} alt={item.title} loading="lazy" />}
+        {item.locationDetails && <p>{item.locationDetails}</p>}
+        {item.time && <p>Time reported for item: {item.time.slice(0, 5)}</p>}
         <p className="description">{item.description}</p>
         {item.isOwn && item.contact && (
           <p>Contact: <a href={'mailto:' + item.contact}>{item.contact}</a></p>
         )}
-        <p className="muted">{item.isOwn ? 'Your report' : 'Sample report'}</p>
+        <p className="muted">{item.isOwn ? 'Your report' : item.author || 'Sample report'}</p>
       </details>
 
       {onReturn && item.isOwn && !item.resolved && (
