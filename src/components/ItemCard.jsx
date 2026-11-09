@@ -9,7 +9,7 @@ const categoryArt = {
   Other: 'M9 3h6v4l2 3v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9l2-3zM9 7h6M7 13h10',
 };
 
-export default function ItemCard({ item, onReturn }) {
+export default function ItemCard({ item, onReturn, onEdit, pending }) {
   const status = item.resolved ? 'Returned' : item.type;
   return (
     <article className="panel item-card">
@@ -35,9 +35,10 @@ export default function ItemCard({ item, onReturn }) {
         <p className="muted">{item.isOwn ? 'Your report' : item.author || 'Sample report'}</p>
       </details>
 
-      {onReturn && item.isOwn && !item.resolved && (
+      {item.isOwn && !item.resolved && (
         <div className="form-actions card-actions">
-          <button type="button" className="secondary" onClick={() => onReturn(item.id)}>
+          {onEdit && <button type="button" className="secondary" disabled={pending} onClick={() => onEdit(item)}>Edit</button>}
+          <button type="button" className="secondary" disabled={pending} onClick={() => onReturn(item.id)}>
             Mark as returned
           </button>
         </div>

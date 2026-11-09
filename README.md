@@ -1,38 +1,32 @@
 # Campus Lost & Found
 
-A simple class project built with React, Vite, and plain CSS.
+Lab 7 prototype for Santa Clara University, built with React and Vite and connected to the team's Django report and account APIs.
 
-## Run the project
+## Run the demo
 
-```bash
-npm install
+From the repository folder, run:
+
+```sh
+npm ci
 npm run dev
 ```
 
-Open the local URL printed in the terminal. Use `npm run build` to create a production build in `dist/`.
+Open the local URL printed by Vite. The demo opens with six fictional reports and needs only Node.js and npm. Practice reports stay in the current browser.
 
-## Where to make changes
+### Quick walkthrough
 
-| File | Purpose |
-| --- | --- |
-| `src/App.jsx` | Main page, search, filters, and saved reports |
-| `src/components/ItemCard.jsx` | A plain item card with expandable details |
-| `src/components/ReportForm.jsx` | The form for reporting a lost or found item |
-| `src/data/items.js` | Sample items, categories, and date formatting |
-| `src/styles.css` | Page layout, colors, and mobile styles |
-| `src/main.jsx` | Starts the React app |
+1. Search for **keys**, switch to **Found**, and open **View details**.
+2. Clear the search and choose **Report an item** to post a fictional report.
+3. Open **My reports** and choose **Mark as returned**. The report stays in your history and leaves the open board.
+4. Refresh to see that the practice report is still in your browser.
 
-## How it works
+## Use the shared campus board
 
-1. `App.jsx` combines sample items with reports saved in this browser.
-2. Search and dropdowns filter which items appear.
-3. Each `ItemCard` uses HTML `<details>` to show more information.
-4. The report button shows `ReportForm` directly on the page.
-5. Submitting the form adds a report and switches to My reports.
-6. Your reports can be marked as returned. Returned items remain in My reports.
+1. Follow [BACKEND_SETUP.md](BACKEND_SETUP.md) to set up PostgreSQL, install the Python dependencies, and migrate the database.
+2. Run Django at `127.0.0.1:8000` in a second terminal. Keep Vite running and open the frontend from its local URL.
+3. Choose **SCU sign in**. For a new account, use **Create an account**, then **Send code** and **Verify email**. In local console email mode, the verification code appears in the Django terminal.
+4. Sign in to browse shared open reports. Post a report, find it under **My reports**, edit it while it is open, and mark it as returned.
 
-React state tracks the reports, filters, and whether the form is open. The form uses native HTML inputs and validation. An effect saves reports to `localStorage` whenever they change.
+Vite forwards `/api` and `/media` to Django. The campus board uses Django sessions and CSRF protection. Demo reports and shared reports are separate. Chat, saved reports, notifications, password reset, and moderation are available in the backend API and are outside this frontend milestone.
 
-To change the appearance, start with `styles.css`. To add sample items or categories, edit `data/items.js`. To change the page layout, edit the JSX returned by `App.jsx`.
-
-This is a student prototype with fictional sample items. Reports stay in the current browser; there is no shared database or login. Reports saved with the earlier frontend still work. A real shared service would need a backend and user accounts.
+Use `npm run build` to create the frontend bundle in `dist/`.

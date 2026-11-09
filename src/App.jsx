@@ -41,6 +41,7 @@ export default function App() {
   const [filter, setFilter] = useState('All items');
   const [category, setCategory] = useState('All categories');
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
@@ -83,6 +84,7 @@ export default function App() {
         setError('Your session expired. Sign in to continue.');
         setUser(null);
         setShowForm(false);
+        setEditing(null);
       } else {
         setBoard({ endpoint, userId: user.id, revision, error: error.message });
       }
@@ -106,6 +108,7 @@ export default function App() {
 
   function closeForm() {
     setShowForm(false);
+    setEditing(null);
   }
 
   function switchBoard(next) {
@@ -151,14 +154,34 @@ export default function App() {
     }
   }
 
-  function saveReport(item) {
-    setReports(current => [item, ...current]);
-    completeReport('Report added to My reports.');
+  function saveReport(body) {
+    if (!campus) {
+      setReports(current => [body, ...current]);
+      completeReport('Report added to My reports.');
+      return;
+    }
+
+    runAction(async () => {
+      const path = editing ? '/api/reports/' + editing.id + '/edit/' : '/api/reports/';
+      await api(path, { method: editing ? 'PATCH' : 'POST', body });
+      setRevision(current => current + 1);
+      completeReport(editing ? 'Report updated.' : 'Report posted to the campus board.');
+    });
   }
 
   function markReturned(id) {
-    setReports(current => current.map(item => item.id === id ? { ...item, resolved: true } : item));
-    setMessage('Item marked as returned. It remains in My reports.');
+    if (!campus) {
+      setReports(current => current.map(item => item.id === id ? { ...item, resolved: true } : item));
+      setMessage('Item marked as returned. It remains in My reports.');
+      return;
+    }
+
+    runAction(async () => {
+      await api('/api/reports/' + id + '/resolve/', { method: 'POST' });
+      setRevision(current => current + 1);
+      if (editing?.id === id) closeForm();
+      setMessage('Item marked as returned. It remains in My reports.');
+    });
   }
 
   function signOut() {
@@ -192,7 +215,7 @@ export default function App() {
             <p className="eyebrow">{campus ? 'SCU campus board' : 'Lab 7 · Demo board'}</p>
             <h1>Campus Lost &amp; Found</h1>
             <p>Find what you’ve lost or help return something to a fellow Bronco.</p>
-            {!campus && (
+            {canBrowse && (
               <button type="button" disabled={pending} aria-expanded={showForm}
                 aria-controls={showForm ? 'report-section' : undefined}
                 onClick={() => showForm ? closeForm() : setShowForm(true)}>
@@ -221,10 +244,11 @@ export default function App() {
           setUser(user);
         }} />}
 
-        {!campus && showForm && (
+        {canBrowse && showForm && (
           <section className="panel report-section" id="report-section" aria-labelledby="report-heading">
-            <h2 id="report-heading">Report an item</h2>
-            <ReportForm onSubmit={saveReport} onCancel={closeForm} />
+            <h2 id="report-heading">{editing ? 'Edit report' : 'Report an item'}</h2>
+            <ReportForm key={editing?.id || 'new'} campus={campus} editing={editing}
+              pending={pending} onSubmit={saveReport} onCancel={closeForm} />
           </section>
         )}
 
@@ -272,13 +296,20 @@ export default function App() {
               visibleItems.length ? (
                 <div className="item-list">
                   {visibleItems.map(item => (
-                    <ItemCard key={item.id} item={item} onReturn={campus ? undefined : markReturned} />
+                    <ItemCard key={item.id} item={item} pending={pending} onReturn={markReturned}
+                      onEdit={campus ? item => {
+                        setEditing(item);
+                        setError('');
+                        setMessage('');
+                        setShowForm(true);
+                        requestAnimationFrame(() => document.getElementById('report-section')?.scrollIntoView());
+                      } : undefined} />
                   ))}
                 </div>
               ) : (
                 <div className="panel empty">
                   <h3>No matching reports</h3>
-                  <p className="muted">{campus ? 'Try a different search or filter.' : 'Try a different search or filter, or report an item.'}</p>
+                  <p className="muted">Try a different search or filter, or report an item.</p>
                 </div>
               )
             )}
