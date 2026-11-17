@@ -2,7 +2,7 @@
 
 Campus lost and found MVP for Santa Clara University, built with React, Vite, and Django.
 
-[Lab 8 TA demo walkthrough](TA_DEMO.md)
+[Lab 8 TA guide for testing on two laptops](TA_DEMO.md)
 
 ## Run the demo
 
