@@ -194,6 +194,7 @@ form { max-width: 650px; }
 .badge.returned { background: #ede9f7; color: #52457e; }
 details { margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--line); font-size: .88rem; }
 .item-card details p { margin-top: 8px; }
+.item-card details form { margin-top: 8px; }
 summary, a { color: var(--red-dark); }
 summary { cursor: pointer; font-weight: 680; }
 .description { white-space: pre-wrap; }
@@ -201,6 +202,33 @@ summary { cursor: pointer; font-weight: 680; }
 .card-actions { margin-top: 12px; }
 .empty h3 { margin-top: 0; }
 .empty p { margin-bottom: 0; }
+
+.moderation-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+}
+
+.moderation-stats dt { color: var(--muted); font-size: .85rem; }
+.moderation-stats dd { margin: 3px 0 0; font-size: 1.6rem; font-weight: 750; }
+.moderation-list { display: grid; gap: 10px; padding: 0; list-style: none; }
+.moderation-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 12px; overflow-wrap: anywhere; }
+.moderation-row h3, .moderation-row p { margin: 0 0 5px; }
+.action-confirmation { flex-basis: 100%; padding: 9px; border-radius: 8px; background: #fff1ec; }
+.action-confirmation p { margin: 0 0 8px; font-size: .88rem; }
+
+.message-inbox { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 14px; align-items: start; }
+.conversation-list { display: grid; gap: 8px; }
+.conversation-button { display: grid; gap: 3px; text-align: left; overflow-wrap: anywhere; }
+.conversation-button span { color: var(--muted); font-weight: 400; }
+.conversation-button[aria-pressed="true"] { background: #fff1ec; border-color: var(--red); }
+.message-thread { overflow-wrap: anywhere; }
+.message-thread > p { margin-top: 0; }
+.message-list { display: grid; gap: 8px; list-style: none; padding: 0; }
+.message-list li { padding: 10px 12px; border-radius: 8px; background: #fcf9f6; }
+.message-list p { margin: 0; }
+.message-list .description { margin-top: 4px; }
+
 footer { margin-top: 28px; padding-block: 14px 24px; border-top: 1px solid var(--line); }
 
 @media (max-width: 760px) {
@@ -213,6 +241,6 @@ footer { margin-top: 28px; padding-block: 14px 24px; border-top: 1px solid var(-
   .brand { font-size: .8rem; }
   .hero { margin-top: 16px; }
   .hero-art { display: none; }
-  .item-list, .form-grid { grid-template-columns: 1fr; }
+  .item-list, .form-grid, .message-inbox { grid-template-columns: 1fr; }
   .filters { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
 }

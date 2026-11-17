@@ -1,6 +1,8 @@
 # Campus Lost & Found
 
-Lab 7 prototype for Santa Clara University, built with React and Vite and connected to the team's Django report and account APIs.
+Campus lost and found MVP for Santa Clara University, built with React, Vite, and Django.
+
+[Lab 8 TA demo walkthrough](TA_DEMO.md)
 
 ## Run the demo
 
@@ -31,6 +33,12 @@ Open the local URL printed by Vite, usually `http://127.0.0.1:4173/`. The demo o
 
 3. Open the Vite URL and choose **SCU sign in**. For a new account, choose **Create an account** with your `@scu.edu` email, then **Send code** and **Verify email**. In console email mode, copy the verification code from the Django terminal.
 
-Vite forwards `/api` and `/media` to Django. The campus board uses Django sessions and CSRF protection. Demo reports and shared reports are separate. Chat, saved reports, notifications, password reset, and moderation are available in the backend API and are outside this frontend milestone.
+Vite forwards `/api` and `/media` to Django. The campus board uses Django sessions and CSRF protection. Demo reports and shared reports are separate.
+
+Signed-in users can flag another user's report. Verified moderator accounts have a **Moderation** button for reviewing flags, browsing report history and statistics, pinning reports, marking reports as returned, and blocking eligible student accounts. Moderators can restore access from **Blocked students**. Escalating a flag to university staff requires SMTP and a configured moderation inbox. See [BACKEND_SETUP.md](BACKEND_SETUP.md) for email settings.
+
+Choose **Contact poster** on another student's open report to start a private conversation. Open **Messages** to read and reply, and use **Refresh messages** to check for replies. Conversations remain readable after an item is marked returned.
+
+Saved reports, in-app notifications, and password reset are available in the backend API.
 
 Use `npm run build` to create the frontend bundle in `dist/`.

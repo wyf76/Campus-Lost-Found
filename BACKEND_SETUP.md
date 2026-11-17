@@ -238,6 +238,8 @@ accepts multipart form data for an optional image.
 | GET | /api/moderation/reports/ | View platform-wide report history as a moderator |
 | GET | /api/moderation/statistics/ | View aggregate counts as a moderator |
 | POST | /api/users/{user_id}/block/ | Block an eligible student as a moderator |
+| GET | /api/users/blocked/ | List blocked students as a moderator |
+| POST | /api/users/{user_id}/unblock/ | Restore an eligible student's access as a moderator |
 
 - Report creation takes `item_type`, `title`, `category`, `happened_on`,
   `location`, and `description`. The server sets the author from the session.

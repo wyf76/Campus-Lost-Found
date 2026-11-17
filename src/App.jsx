@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, toBoardItem } from './api';
 import AccountForm from './components/AccountForm';
 import ItemCard from './components/ItemCard';
+import MessageInbox from './components/MessageInbox';
+import ModerationDashboard from './components/ModerationDashboard';
 import ReportForm from './components/ReportForm';
 import { categories, sampleItems } from './data/items';
 
@@ -31,7 +33,11 @@ function loadReports() {
   }
 }
 
-const views = ['All items', 'Lost', 'Found', 'My reports'];
+const views = ['All items', 'Lost', 'Found', 'Returned', 'My reports'];
+const reportEndpoints = {
+  Returned: '/api/reports/?status=resolved',
+  'My reports': '/api/users/me/reports/',
+};
 
 export default function App() {
   const [reports, setReports] = useState(loadReports);
@@ -48,6 +54,20 @@ export default function App() {
   const [storageError, setStorageError] = useState(false);
   const [revision, setRevision] = useState(0);
   const [board, setBoard] = useState(null);
+  const [campusView, setCampusView] = useState('board');
+  const [initialConversationId, setInitialConversationId] = useState(null);
+  const canModerate = campus && Boolean(user?.is_moderator);
+  const moderating = canModerate && campusView === 'moderation';
+  const messaging = campus && Boolean(user) && campusView === 'messages';
+  const browsingBoard = !moderating && !messaging;
+
+  const expireSession = useCallback(() => {
+    setError('Your session expired. Sign in to continue.');
+    setUser(null);
+    setShowForm(false);
+    setEditing(null);
+    setCampusView('board');
+  }, []);
 
   useEffect(() => {
     try {
@@ -71,9 +91,9 @@ export default function App() {
     return () => controller.abort();
   }, [campus, user]);
 
-  const endpoint = filter === 'My reports' ? '/api/users/me/reports/' : '/api/reports/';
+  const endpoint = reportEndpoints[filter] ?? '/api/reports/';
   useEffect(() => {
-    if (!campus || !user) return;
+    if (!campus || !user || !browsingBoard) return;
     const controller = new AbortController();
     api(endpoint, { signal: controller.signal }).then(({ reports }) => {
       if (controller.signal.aborted) return;
@@ -81,16 +101,13 @@ export default function App() {
     }).catch(error => {
       if (controller.signal.aborted) return;
       if (error.status === 401) {
-        setError('Your session expired. Sign in to continue.');
-        setUser(null);
-        setShowForm(false);
-        setEditing(null);
+        expireSession();
       } else {
         setBoard({ endpoint, userId: user.id, revision, error: error.message });
       }
     });
     return () => controller.abort();
-  }, [campus, endpoint, revision, user]);
+  }, [browsingBoard, campus, endpoint, expireSession, revision, user]);
 
   const boardReady = board?.endpoint === endpoint && board?.userId === user?.id && board?.revision === revision;
   const boardError = campus && boardReady ? board.error : '';
@@ -98,12 +115,12 @@ export default function App() {
   const loading = campus && canBrowse && !boardReady;
   const items = campus ? (boardReady ? board.items || [] : []) : [...reports, ...sampleItems];
   const visibleItems = items.filter(item => {
-    const matchesStatus = filter === 'My reports'
-      ? item.isOwn
-      : !item.resolved && (filter === 'All items' || item.type === filter);
+    const matchesView = (filter === 'My reports' && item.isOwn)
+      || (filter === 'Returned' && item.resolved)
+      || (!item.resolved && (filter === 'All items' || item.type === filter));
     const matchesCategory = category === 'All categories' || item.category === category;
     const text = [item.title, item.location, item.locationDetails, item.description].join(' ').toLowerCase();
-    return matchesStatus && matchesCategory && text.includes(query.trim().toLowerCase());
+    return matchesView && matchesCategory && text.includes(query.trim().toLowerCase());
   });
 
   function closeForm() {
@@ -124,6 +141,7 @@ export default function App() {
     setCategory('All categories');
     setMessage('');
     setError('');
+    setCampusView('board');
     closeForm();
   }
 
@@ -141,14 +159,14 @@ export default function App() {
     setMessage('');
     try {
       await action();
+      return true;
     } catch (error) {
       if (error.status === 401) {
-        setUser(null);
-        closeForm();
-        setError('Your session expired. Sign in to continue.');
+        expireSession();
       } else {
         setError(error.message);
       }
+      return false;
     } finally {
       setPending(false);
     }
@@ -170,17 +188,52 @@ export default function App() {
   }
 
   function markReturned(id) {
-    if (!campus) {
-      setReports(current => current.map(item => item.id === id ? { ...item, resolved: true } : item));
-      setMessage('Item marked as returned. It remains in My reports.');
-      return;
-    }
-
     runAction(async () => {
-      await api('/api/reports/' + id + '/resolve/', { method: 'POST' });
-      setRevision(current => current + 1);
+      if (campus) {
+        await api('/api/reports/' + id + '/resolve/', { method: 'POST' });
+        setRevision(current => current + 1);
+      } else {
+        setReports(current => current.map(item => item.id === id ? { ...item, resolved: true } : item));
+      }
+
       if (editing?.id === id) closeForm();
+      setFilter('Returned');
+      setQuery('');
+      setCategory('All categories');
       setMessage('Item marked as returned. It remains in My reports.');
+    });
+  }
+
+  function flagReport(id, reason) {
+    return runAction(async () => {
+      await api('/api/reports/' + id + '/flag/', { method: 'POST', body: { reason } });
+    });
+  }
+
+  function openCampusView(view, conversationId = null) {
+    setCampusView(view);
+    setInitialConversationId(conversationId);
+    setError('');
+    setMessage('');
+    closeForm();
+  }
+
+  function contactPoster(id) {
+    return runAction(async () => {
+      const { conversation } = await api('/api/reports/' + id + '/conversations/', { method: 'POST' });
+      openCampusView('messages', conversation.id);
+    });
+  }
+
+  function refreshReports() {
+    setRevision(current => current + 1);
+  }
+
+  function moderateReport(path, method, feedback) {
+    return runAction(async () => {
+      await api(path, { method });
+      refreshReports();
+      setMessage(feedback);
     });
   }
 
@@ -189,6 +242,7 @@ export default function App() {
       await api('/api/auth/logout/', { method: 'POST' });
       setUser(null);
       setBoard(null);
+      setCampusView('board');
       closeForm();
     });
   }
@@ -202,6 +256,18 @@ export default function App() {
             Santa Clara University
           </span>
           <div className="account-nav">
+            {campus && user && (
+              <button className="secondary" disabled={pending}
+                onClick={() => openCampusView(messaging ? 'board' : 'messages')}>
+                {messaging ? 'Campus board' : 'Messages'}
+              </button>
+            )}
+            {canModerate && (
+              <button className="secondary" disabled={pending}
+                onClick={() => openCampusView(moderating ? 'board' : 'moderation')}>
+                {moderating ? 'Campus board' : 'Moderation'}
+              </button>
+            )}
             {campus && user && <button className="text-button" disabled={pending} onClick={signOut}>Sign out</button>}
             <button className="secondary" disabled={pending} onClick={() => switchBoard(!campus)}>
               {campus ? 'Open demo board' : 'SCU sign in'}
@@ -210,7 +276,7 @@ export default function App() {
         </div>
       </div>
       <main className="container">
-        <header className="hero">
+        {browsingBoard && <header className="hero">
           <div>
             <p className="eyebrow">{campus ? 'SCU campus board' : 'Lab 7 · Demo board'}</p>
             <h1>Campus Lost &amp; Found</h1>
@@ -230,7 +296,7 @@ export default function App() {
             <circle cx="95" cy="40" r="7.5" fill="#fff8f2" />
             <path d="M143 29v12m-6-6h12M42 43v9m-4.5-4.5h9M145 87v9m-4.5-4.5h9" />
           </svg>
-        </header>
+        </header>}
 
         {message && <p className="message" role="status">{message}</p>}
         {error && <p className="error" role="alert">{error}</p>}
@@ -244,7 +310,17 @@ export default function App() {
           setUser(user);
         }} />}
 
-        {canBrowse && showForm && (
+        {moderating && (
+          <ModerationDashboard user={user} pending={pending} revision={revision}
+            onAction={moderateReport} onRetry={refreshReports} onSessionExpired={expireSession} />
+        )}
+
+        {messaging && (
+          <MessageInbox key={user.id} userId={user.id} initialConversationId={initialConversationId}
+            pending={pending} runAction={runAction} onSessionExpired={expireSession} />
+        )}
+
+        {canBrowse && browsingBoard && showForm && (
           <section className="panel report-section" id="report-section" aria-labelledby="report-heading">
             <h2 id="report-heading">{editing ? 'Edit report' : 'Report an item'}</h2>
             <ReportForm key={editing?.id || 'new'} campus={campus} editing={editing}
@@ -252,7 +328,7 @@ export default function App() {
           </section>
         )}
 
-        {canBrowse && (
+        {canBrowse && browsingBoard && (
           <section aria-labelledby="items-heading">
             <div className="board-heading">
               <div>
@@ -297,6 +373,8 @@ export default function App() {
                 <div className="item-list">
                   {visibleItems.map(item => (
                     <ItemCard key={item.id} item={item} pending={pending} onReturn={markReturned}
+                      onContact={campus && !item.isOwn && !item.resolved ? contactPoster : undefined}
+                      onFlag={campus && !item.isOwn ? flagReport : undefined}
                       onEdit={campus ? item => {
                         setEditing(item);
                         setError('');

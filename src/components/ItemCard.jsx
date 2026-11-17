@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { formatDate } from '../data/items';
 
 const categoryArt = {
@@ -9,7 +10,39 @@ const categoryArt = {
   Other: 'M9 3h6v4l2 3v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9l2-3zM9 7h6M7 13h10',
 };
 
-export default function ItemCard({ item, onReturn, onEdit, pending }) {
+function FlagReport({ item, onFlag, pending }) {
+  const [submitted, setSubmitted] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    const input = event.currentTarget.elements.reason;
+    const reason = input.value.trim();
+    if (!reason) {
+      input.setCustomValidity('Enter a reason for flagging this report.');
+      input.reportValidity();
+      return;
+    }
+    if (await onFlag(item.id, reason)) setSubmitted(true);
+  }
+
+  return (
+    <details>
+      <summary>Flag report</summary>
+      {submitted ? <p role="status">Flag submitted for moderator review.</p> : (
+        <form onSubmit={submit}>
+          <label>
+            Reason for flagging
+            <textarea name="reason" rows={2} required maxLength={500}
+              onInput={event => event.currentTarget.setCustomValidity('')} />
+          </label>
+          <button type="submit" className="secondary" disabled={pending}>Submit flag</button>
+        </form>
+      )}
+    </details>
+  );
+}
+
+export default function ItemCard({ item, onReturn, onEdit, onFlag, onContact, pending, children }) {
   const status = item.resolved ? 'Returned' : item.type;
   return (
     <article className="panel item-card">
@@ -22,10 +55,10 @@ export default function ItemCard({ item, onReturn, onEdit, pending }) {
       <h3>{item.title}</h3>
       <p className="item-location">{item.location}</p>
       <p className="muted item-meta">{item.category} · {formatDate(item.date)}{item.pinned ? ' · Pinned' : ''}</p>
+      {item.image && <img className="report-image" src={item.image} alt={item.title} loading="lazy" />}
 
       <details>
         <summary>View details</summary>
-        {item.image && <img className="report-image" src={item.image} alt={item.title} loading="lazy" />}
         {item.locationDetails && <p>{item.locationDetails}</p>}
         {item.time && <p>Time reported for item: {item.time.slice(0, 5)}</p>}
         <p className="description">{item.description}</p>
@@ -35,14 +68,21 @@ export default function ItemCard({ item, onReturn, onEdit, pending }) {
         <p className="muted">{item.isOwn ? 'Your report' : item.author || 'Sample report'}</p>
       </details>
 
-      {item.isOwn && !item.resolved && (
+      {item.isOwn && !item.resolved && (onEdit || onReturn) && (
         <div className="form-actions card-actions">
           {onEdit && <button type="button" className="secondary" disabled={pending} onClick={() => onEdit(item)}>Edit</button>}
-          <button type="button" className="secondary" disabled={pending} onClick={() => onReturn(item.id)}>
+          {onReturn && <button type="button" className="secondary" disabled={pending} onClick={() => onReturn(item.id)}>
             Mark as returned
-          </button>
+          </button>}
         </div>
       )}
+      {onContact && (
+        <div className="form-actions card-actions">
+          <button type="button" disabled={pending} onClick={() => onContact(item.id)}>Contact poster</button>
+        </div>
+      )}
+      {onFlag && <FlagReport item={item} onFlag={onFlag} pending={pending} />}
+      {children}
     </article>
   );
 }

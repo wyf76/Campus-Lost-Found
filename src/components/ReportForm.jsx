@@ -39,10 +39,20 @@ export default function ReportForm({ onSubmit, onCancel, campus, editing, pendin
     }
 
     if (campus) {
-      const { type, category, date, ...details } = values;
+      const { type, category, date, image, ...details } = values;
       const body = { ...details, category: category.toLowerCase(), happened_on: date };
       if (!editing) body.item_type = type.toLowerCase();
-      onSubmit(body);
+
+      if (image?.name) {
+        const upload = new FormData();
+        for (const [field, value] of Object.entries(body)) {
+          upload.append(field, value);
+        }
+        upload.append('image', image);
+        onSubmit(upload);
+      } else {
+        onSubmit(body);
+      }
       return;
     }
 
@@ -109,6 +119,12 @@ export default function ReportForm({ onSubmit, onCancel, campus, editing, pendin
           <textarea name="description" rows={3} defaultValue={editing?.description}
             placeholder="Include a few details that would help identify the item." required maxLength={campus ? undefined : 600} />
         </label>
+        {campus && !editing && (
+          <label>
+            Item photo (optional)
+            <input type="file" name="image" accept="image/*" />
+          </label>
+        )}
         <div className="form-actions">
           <button type="submit">{pending ? 'Saving…' : editing ? 'Save changes' : 'Post report'}</button>
           <button type="button" className="secondary" onClick={onCancel}>Cancel</button>

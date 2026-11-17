@@ -23,7 +23,12 @@ SECRET_KEY = required_env("CAMPUS_DJANGO_SECRET_KEY")
 
 # Local development settings
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [".localhost", "127.0.0.1", "[::1]"]
+ALLOWED_HOSTS.extend(
+    host.strip()
+    for host in os.environ.get("CAMPUS_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
