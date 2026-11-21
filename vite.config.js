@@ -4,8 +4,10 @@ import { defineConfig } from 'vite';
 const django = { target: 'http://127.0.0.1:8000', changeOrigin: false };
 const proxy = { '/api': django, '/media': django };
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Production assets are served by Django and WhiteNoise under /static/.
+  base: command === 'build' ? '/static/' : '/',
   esbuild: { jsx: 'automatic' },
   server: { allowedHosts: ['terminal.local'], proxy },
   preview: { allowedHosts: ['terminal.local'], proxy },
-});
+}));

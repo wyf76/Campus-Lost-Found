@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: campus-lost-found-fullstack
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: CAMPUS_DEBUG
+        value: "false"
+      - key: CAMPUS_EMAIL_BACKEND
+        value: console
+      - key: CAMPUS_DJANGO_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
