@@ -8,6 +8,13 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": { "react": "^19.1.0", "react-dom": "^19.1.0" },
-  "devDependencies": { "vite": "^7.0.0" }
+  "dependencies": {
+    "@neon/config": "^1.14.6",
+    "@neon/env": "^2.1.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
 }
