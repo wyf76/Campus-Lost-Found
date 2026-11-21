@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -23,12 +24,7 @@ SECRET_KEY = required_env("CAMPUS_DJANGO_SECRET_KEY")
 
 # Local development settings
 DEBUG = True
-ALLOWED_HOSTS = [".localhost", "127.0.0.1", "[::1]"]
-ALLOWED_HOSTS.extend(
-    host.strip()
-    for host in os.environ.get("CAMPUS_ALLOWED_HOSTS", "").split(",")
-    if host.strip()
-)
+ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -72,16 +68,43 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": required_env("CAMPUS_DB_NAME"),
-        "USER": required_env("CAMPUS_DB_USER"),
-        "PASSWORD": required_env("CAMPUS_DB_PASSWORD"),
-        "HOST": os.environ.get("CAMPUS_DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("CAMPUS_DB_PORT", "5432"),
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    parsed_database_url = urlsplit(database_url)
+    if (
+        parsed_database_url.scheme not in {"postgres", "postgresql"}
+        or not parsed_database_url.hostname
+        or not parsed_database_url.path.strip("/")
+    ):
+        raise ImproperlyConfigured("DATABASE_URL must be a PostgreSQL URL.")
+
+    # Neon applications should use the pooled DATABASE_URL. Use the direct
+    # DATABASE_URL_UNPOOLED only for schema migrations and database tooling.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(parsed_database_url.path.lstrip("/")),
+            "USER": unquote(parsed_database_url.username or ""),
+            "PASSWORD": unquote(parsed_database_url.password or ""),
+            "HOST": parsed_database_url.hostname,
+            "PORT": str(parsed_database_url.port or 5432),
+            "CONN_MAX_AGE": 60,
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": {"sslmode": "require"},
+        }
     }
-}
+else:
+    # Local development can continue using the per-developer .env.backend.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": required_env("CAMPUS_DB_NAME"),
+            "USER": required_env("CAMPUS_DB_USER"),
+            "PASSWORD": required_env("CAMPUS_DB_PASSWORD"),
+            "HOST": os.environ.get("CAMPUS_DB_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("CAMPUS_DB_PORT", "5432"),
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 
