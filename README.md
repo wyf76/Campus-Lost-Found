@@ -42,3 +42,25 @@ Choose **Contact poster** on another student's open report to start a private co
 Saved reports, in-app notifications, and password reset are available in the backend API.
 
 Use `npm run build` to create the frontend bundle in `dist/`.
+
+## Deploy the full app on Render
+
+The Render Blueprint in `render.yaml` builds the React frontend and Django API
+into one Docker web service. The browser and API share one origin, so Django
+session cookies and CSRF protection work without a separate CORS setup.
+
+1. Push or merge this deployment configuration to the GitHub branch you want
+   Render to deploy.
+2. In Render, choose **New → Blueprint** and select the repository. The
+   Blueprint creates a new full-stack web service; keep the existing API
+   service until the new one passes the two-laptop test.
+3. For `DATABASE_URL`, enter Neon's pooled URL. For `DATABASE_URL_UNPOOLED`,
+   enter Neon's direct URL. Do not paste either value into Git or chat.
+4. Generate a new `CAMPUS_DJANGO_SECRET_KEY` for the deployed service.
+   `CAMPUS_DEBUG` is set to `false` in the Blueprint.
+5. Once the service is live, open its root URL. It should display the React
+   app; `/api/auth/csrf/` should return JSON.
+
+The container runs migrations with Neon's direct URL at startup, collects
+static assets, then starts Gunicorn. The Blueprint uses console email for a
+demo; verification codes appear in the Render service logs.

@@ -22,12 +22,21 @@ def required_env(name):
 
 SECRET_KEY = required_env("CAMPUS_DJANGO_SECRET_KEY")
 
-# Local development settings
-DEBUG = True
-ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS",
-    "localhost,127.0.0.1"
-).split(",")
+DEBUG = os.environ.get("CAMPUS_DEBUG", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+for host in os.environ.get("CAMPUS_ALLOWED_HOSTS", "").split(","):
+    if host.strip():
+        ALLOWED_HOSTS.append(host.strip())
+
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_hostname:
+    ALLOWED_HOSTS.append(render_hostname)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -43,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -56,7 +66,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "dist"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -143,6 +153,12 @@ SESSION_COOKIE_AGE = 8 * 60 * 60
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# Render terminates HTTPS before forwarding requests to the container.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = not DEBUG
 
 email_mode = os.environ.get(
     "CAMPUS_EMAIL_BACKEND", "console"
@@ -183,7 +199,17 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "dist"] if (BASE_DIR / "dist").is_dir() else []
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 

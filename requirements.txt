@@ -6,3 +6,4 @@ python-dotenv==1.2.4
 sqlparse==0.6.0
 Pillow==13.0.0
 gunicorn==23.0.0
+whitenoise==6.12.0

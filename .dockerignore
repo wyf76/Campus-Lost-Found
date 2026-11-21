@@ -1,0 +1,14 @@
+.git/
+.neon
+.env*
+node_modules/
+dist/
+staticfiles/
+.venv/
+.venv-local/
+venv/
+__pycache__/
+*.py[cod]
+media/
+output/
+.playwright-cli/
